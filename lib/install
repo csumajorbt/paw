@@ -1,0 +1,7 @@
+#!/bin/bash
+if [ ! -d /etc/paw ] ; then
+	mkdir /etc/paw
+fi
+ln -s /usr/lib/paw/lib/paw.conf /etc/paw/paw.conf
+ln -s /usr/lib/paw/lib/paw /etc/init.d/paw
+ln -s /usr/lib/paw/lib/server /usr/sbin/paw

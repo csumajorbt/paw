@@ -1,0 +1,97 @@
+#!/usr/bin/php
+<?php
+$LOGDIR = "/var/log/paw/";
+if(!is_dir($LOGDIR))
+	mkdir($LOGDIR, 055);
+$LOG = $LOGDIR . 'paw.log';
+
+$cpid = pcntl_fork();
+if($cpid < 0)
+{
+	writeToLog("Failed to fork!");
+	exit(1);
+} else {
+	if($cpid > 0)
+	{
+		writeToLog("Parent deceased.");
+		exit(0);
+	}
+}
+
+function writeToLog($str)
+{
+	global $LOG;
+	$line = $str;
+	$fop = fopen($LOG,"a+");
+	fputs($fop, $line . "\n");
+	fclose($fop);
+}
+function shutdown() { 
+	global $SOCKET;
+	socket_close($SOCKET);
+	writeToLog("Shutting down.");
+	posix_kill(posix_getpid(), SIGTERM); 
+} 
+
+// Child
+function app()
+{
+	writeToLog(date('M d, Y h:i:s a').' - working...');
+}
+
+
+// tick use required as of PHP 4.3.0
+declare(ticks = 1);
+
+// signal handler function
+writeToLog("Registering signal handlers");
+function sig_handler($signo)
+{
+
+     switch ($signo) {
+         case SIGTERM:
+             // handle shutdown tasks
+             socket_close($SOCKET);
+             exit;
+             break;
+         case SIGHUP:
+             // handle restart tasks
+             socket_close($SOCKET);
+             break;
+         case SIGUSR1:
+             echo "Caught SIGUSR1...\n";
+             break;
+         default:
+             // handle all other signals
+             break;
+     }
+
+}
+
+writeToLog("Binding signal handlers");
+pcntl_signal(SIGTERM, "sig_handler");
+pcntl_signal(SIGHUP,  "sig_handler");
+pcntl_signal(SIGUSR1, "sig_handler");
+
+
+writeToLog("Closing file handlers");
+fclose(STDIN);  // Close all of the standard 
+fclose(STDOUT); // file descriptors as we 
+fclose(STDERR); // are running as a daemon. 
+
+if(function_exists("posix_setsid"))
+{
+	writeToLog("Setting as session.");
+	posix_setsid();
+}
+
+writeToLog("Registering Shutdown function");
+register_shutdown_function('shutdown'); 
+
+//register_tick_function('app');
+
+require_once("/usr/lib/paw/lib/paw.class.php");
+$PAW = new Paw();
+$PAW->run();
+
+?>

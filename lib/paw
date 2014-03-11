@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+### BEGIN INIT INFO
+# Provides: paw
+# Required-Start: $local_fs $network $named $remote_fs $syslog
+# Required-Stop: $local_fs $network $named $remote_fs $syslog
+# Short-Description: PAW - PHP Application Web server
+# Description: 
+### END INIT INFO
+
+# paw      This shell script takes care of starting and stopping
+#             standalone paw.
+#
+# chkconfig: - 60 50
+# description: Vsftpd is a ftp daemon, which is the program \
+#              that answers incoming ftp service requests.
+# processname: paw
+# config: /etc/paw/paw.conf
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+RETVAL=0
+prog="paw"
+
+start() {
+        # Start daemons.
+
+	# Check that networking is up.
+	[ ${NETWORKING} = "no" ] && exit 1
+
+	[ -x /usr/lib/paw/lib/server ] || exit 1
+
+        if [ -d /etc/paw ] ; then
+                PROC_FAILED=0
+                #site=`basename $i .conf`
+                echo -n $"Starting $prog: "
+                daemon /usr/sbin/paw $i
+                RETVAL=$?
+                echo
+                if [ $RETVAL -eq 0 ] && [ ! -f /var/lock/subsys/$prog ]; then
+                        touch /var/lock/subsys/$prog
+                elif [ $RETVAL -ne 0 ]; then
+                        ps -FC paw | grep "$i" > /dev/null
+                        RETVAL=$?
+                        if [ $PROC_FAILED -eq 0 ] && [ $RETVAL -ne 0 ]; then
+                                PROC_FAILED=1
+                        fi
+                fi
+        else
+                RETVAL=1
+        fi
+        return $RETVAL
+}
+
+stop() {
+        # Stop daemons.
+        echo -n $"Shutting down $prog: "
+        killproc $prog
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$prog
+        return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        stop
+        start
+        RETVAL=$?
+        ;;
+  condrestart|try-restart|force-reload)
+        if [ -f /var/lock/subsys/$prog ]; then
+            stop
+            start
+            RETVAL=$?
+        fi
+        ;;
+  status)
+        status $prog
+        RETVAL=$?
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
+        exit 1
+esac
+
+exit $RETVAL
