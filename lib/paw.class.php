@@ -6,6 +6,7 @@ class Paw
 	private $SPAWN = null;
 	private $_SETTINGS = null;
 	private $_REQUESTS = 0;
+	private $_INSTANCE = null;
 	
 	public function __constructor()
 	{
@@ -29,6 +30,19 @@ class Paw
 		$ADDR = $this->_SETTINGS['address'];
 		$PORT = $this->_SETTINGS['port'];
 		writeToLog("Going to bind to {$ADDR}:{$PORT}");
+		
+		// Set the DOCUMENT_ROOT
+		$_SERVER['DOCUMENT_ROOT'] = '';
+		if(is_dir($this->_SETTINGS['apps'][0]['dir']))
+		{
+			$_SERVER['DOCUMENT_ROOT'] = $this->_SETTINGS['apps'][0]['dir'];
+		}
+		
+		if(file_exists($this->_SETTINGS['apps'][0]['dir'] . '/' . $this->_SETTINGS['apps'][0]['controller']))
+		{
+			require_once($this->_SETTINGS['apps'][0]['dir'] . $this->_SETTINGS['apps'][0]['controller']);
+			$this->_INSTANCE = new $this->_SETTINGS['apps'][0]['service'];
+		}	
 	
 	
 		set_time_limit(0);
@@ -93,14 +107,21 @@ class Paw
 			$body = trim($data[1]);
 			
 			// Get the request method
+			$line1 = explode(" ", $reqHeaders[0]);
 			$_SERVER['REQUEST_METHOD'] = substr($reqHeaders[0],0,stripos($reqHeaders[0]," "));
+			$_SERVER['REQUEST_URI'] = substr($reqHeaders[0], stripos($reqHeaders[0]," ") + 1, stripos($reqHeaders[0]," "
 			
-			/*
-			$out .= 'REQUEST_METHOD: ' . $_SERVER['REQUEST_METHOD'] . '<br>';
-			$out .= 'Requests: ' . (string) $this->_REQUESTS . '<br>';
-			$out .= 'HEADERS:<br>'.nl2br($data[0]).'<br>';
-			*/
-			//$out .= nl2br(print_r($_SERVER,true));
+			$_SERVER['REQUEST_METHOD'] = $line1[0];
+			$_SERVER['REQUEST_URI'] = $line1[1];
+			
+			$CHECKFILE = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['REQUEST_URI'];
+			if(file_exists($CHECKFILE))
+			{
+				$out = file_get_contents($CHECKFILE);
+			} else {
+				$METHOD = $this->_SETTINGS['apps'][0]['method'];
+				$this->_INSTANCE->$METHOD();
+			}
 			
 			$HEAD = str_replace('__CONTENT_LENGTH__',strlen($out),$HEAD);
 			$put = $HEAD . $out;
@@ -108,11 +129,6 @@ class Paw
 			socket_write($this->SPAWN, $put, strlen($put));
 			socket_close($this->SPAWN);
 		}
-	}
-	
-	public function getConfig()
-	{
-	
 	}
 }
 ?>
