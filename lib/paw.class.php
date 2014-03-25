@@ -63,7 +63,7 @@ class Paw
 
 		$HEAD = "HTTP/1.1 200 OK\r\n";
 		$HEAD .= "Server: PAW\r\n";
-		$HEAD .= "X-Powered-By: Your Mom\r\n";
+		$HEAD .= "X-Powered-By: PAW (Php Application Web Server)\r\n";
 		$HEAD .= "Connection: close\r\n";
 		$HEAD .= "Content-length: __CONTENT_LENGTH__\r\n";
 		$HEAD .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -108,11 +108,16 @@ class Paw
 			
 			// Get the request method
 			$line1 = explode(" ", $reqHeaders[0]);
-			$_SERVER['REQUEST_METHOD'] = substr($reqHeaders[0],0,stripos($reqHeaders[0]," "));
-			$_SERVER['REQUEST_URI'] = substr($reqHeaders[0], stripos($reqHeaders[0]," ") + 1, stripos($reqHeaders[0]," "
-			
-			$_SERVER['REQUEST_METHOD'] = $line1[0];
-			$_SERVER['REQUEST_URI'] = $line1[1];
+			$_SERVER['REQUEST_METHOD'] = trim($line1[0]);
+			$_SERVER['REQUEST_URI'] = trim($line1[1]);
+            if(($idx = stripos('?', $_SERVER['REQUEST_URI'])) !== false) {
+                $tmp = explode('?', $_SERVER['REQUEST_URI']);
+                $_SERVER['REQUEST_URI'] = $tmp[0];
+                $_SERVER['QUERY_STRING'] = $tmp[1];
+                unset($tmp);
+                unset($idx);
+            }
+            unset($line1);
 			
 			$CHECKFILE = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['REQUEST_URI'];
 			if(file_exists($CHECKFILE))
@@ -122,12 +127,17 @@ class Paw
 				$METHOD = $this->_SETTINGS['apps'][0]['method'];
 				$this->_INSTANCE->$METHOD();
 			}
+            unset($CHECKFILE);
 			
 			$HEAD = str_replace('__CONTENT_LENGTH__',strlen($out),$HEAD);
 			$put = $HEAD . $out;
 			
 			socket_write($this->SPAWN, $put, strlen($put));
 			socket_close($this->SPAWN);
+
+            unset($put);
+            unset($HEAD);
+            unset($out);
 		}
 	}
 }
