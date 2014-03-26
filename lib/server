@@ -1,5 +1,8 @@
 #!/usr/bin/php
 <?php
+error_reporting('E_ALL');
+ini_set("display_errors","on");
+
 $LOGDIR = "/var/log/paw/";
 if(!is_dir($LOGDIR))
 	mkdir($LOGDIR, 055);
