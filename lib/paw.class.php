@@ -40,8 +40,8 @@ class Paw
 		$this->_SETTINGS = json_decode($CONF,true);
 
         // IP Address to listen on
-        if(!empty($this->_SETTINGS['address']))
-		  $SOCKETIP = $this->_SETTINGS['address'];
+        //if(!empty($this->_SETTINGS['address']))
+		  //$SOCKETIP = $this->_SETTINGS['address'];
 
         // Port to accept connections on
         if(!empty($this->_SETTINGS['port']))
