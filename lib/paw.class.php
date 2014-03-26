@@ -40,14 +40,14 @@ class Paw
 		$this->_SETTINGS = json_decode($CONF,true);
 
         // IP Address to listen on
-        //if(!empty($this->_SETTINGS['address']))
-		  //$SOCKETIP = $this->_SETTINGS['address'];
+        if(!empty($this->_SETTINGS['address']))
+		  $SOCKETIP = $this->_SETTINGS['address'];
 
         // Port to accept connections on
         if(!empty($this->_SETTINGS['port']))
 		  $PORT = $this->_SETTINGS['port'];
 
-		writeToLog("Going to bind to {$ADDR}:{$PORT}");
+		writeToLog("Going to bind to {$SOCKETIP}:{$PORT}");
 		
 		// Set the DOCUMENT_ROOT
 		$_SERVER['DOCUMENT_ROOT'] = '';
