@@ -5,6 +5,9 @@ if(!is_dir($LOGDIR))
 	mkdir($LOGDIR, 055);
 $LOG = $LOGDIR . 'paw.log';
 
+require_once("/usr/lib/paw/lib/paw.class.php");
+$PAW = new Paw();
+
 $cpid = pcntl_fork();
 if($cpid < 0)
 {
@@ -47,25 +50,7 @@ declare(ticks = 1);
 writeToLog("Registering signal handlers");
 function sig_handler($signo)
 {
-
-     switch ($signo) {
-         case SIGTERM:
-             // handle shutdown tasks
-             socket_close($SOCKET);
-             exit;
-             break;
-         case SIGHUP:
-             // handle restart tasks
-             socket_close($SOCKET);
-             break;
-         case SIGUSR1:
-             echo "Caught SIGUSR1...\n";
-             break;
-         default:
-             // handle all other signals
-             break;
-     }
-
+    $paw->handleSig($signo);
 }
 
 writeToLog("Binding signal handlers");
@@ -90,8 +75,6 @@ register_shutdown_function('shutdown');
 
 //register_tick_function('app');
 
-require_once("/usr/lib/paw/lib/paw.class.php");
-$PAW = new Paw();
 $PAW->run();
 
 ?>

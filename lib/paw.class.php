@@ -1,4 +1,5 @@
 <?php
+require_once("include/logger.class.php");
 class Paw
 {
 	private $SOCKET = null;
@@ -7,10 +8,14 @@ class Paw
 	private $_SETTINGS = null;
 	private $_REQUESTS = 0;
 	private $_INSTANCE = null;
+    private $ACCESSLOG = null;
+    private $ERRORLOG = null;
 	
 	public function __constructor()
 	{
-	
+	   $this->ACCESSLOG = new PAWLog();
+        $this->ERRORLOG = new PAWLog();
+        $this->LOG = new PAWLog();
 	}
 	
 	public function run()
@@ -20,6 +25,13 @@ class Paw
 		$_GET = array();
 		$_SESSION = array();
 		$_COOKIE = array();
+
+        /*
+        Defaults
+        */
+        $SOCKETIP = '0.0.0.0';
+        $PORT = '80';
+
 	
 		writeToLog("Reading config.");
 		$CONFFILE = "/etc/paw/paw.conf";
@@ -27,8 +39,14 @@ class Paw
 		writeToLog("{$CONF}");
 		$this->_SETTINGS = json_decode($CONF,true);
 
-		$ADDR = $this->_SETTINGS['address'];
-		$PORT = $this->_SETTINGS['port'];
+        // IP Address to listen on
+        if(isset($this->_SETTINGS['address']))
+		  $SOCKETIP = $this->_SETTINGS['address'];
+
+        // Port to accept connections on
+        if(isset($this->_SETTINGS['port']))
+		  $PORT = $this->_SETTINGS['port'];
+
 		writeToLog("Going to bind to {$ADDR}:{$PORT}");
 		
 		// Set the DOCUMENT_ROOT
@@ -50,7 +68,7 @@ class Paw
 
 		// Bind to all available addresses.
 		writeToLog("BINDING");
-		$RES = socket_bind($this->SOCKET, "0.0.0.0", $PORT);
+		$RES = socket_bind($this->SOCKET, $SOCKETIP, $PORT);
 		if(!$RES) {
 			writeToLog("FAILED TO BIND!");
 			if(function_exists("shutdown"))
@@ -61,13 +79,15 @@ class Paw
 
 		$out = 'output: ';
 
-		$HEAD = "HTTP/1.1 200 OK\r\n";
-		$HEAD .= "Server: PAW\r\n";
+        $cacheExpire = isset($this->_SETTINGS['apps'][0]['cacheExpire']) ? $this->_SETTINGS['apps'][0]['cacheExpire'] : 0;
+
+		$HEAD = "HTTP/1.1 __STATUS__ OK\r\n";
+		$HEAD .= "Server: PAW (Php Application Web Server)\r\n";
 		$HEAD .= "X-Powered-By: PAW (Php Application Web Server)\r\n";
 		$HEAD .= "Connection: close\r\n";
 		$HEAD .= "Content-length: __CONTENT_LENGTH__\r\n";
 		$HEAD .= "Content-Type: text/html; charset=UTF-8\r\n";
-		$HEAD .= "Cache-Control:public, max-age=0\r\n";
+		$HEAD .= "Cache-Control:public, max-age=".$cacheExpire."\r\n";
 		$HEAD .= "Date: ".date('D, d M Y h:i:s T')."\r\n";
 
 		$AHEADERS = headers_list();
@@ -81,6 +101,7 @@ class Paw
 		while(true)
 		{
 			$out = '';
+            $stats = '200';
 			//writeToLog("WAITING...");
 			$this->SPAWN = socket_accept($this->SOCKET);
 			$this->_REQUESTS += 1;
@@ -122,6 +143,7 @@ class Paw
 			$CHECKFILE = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['REQUEST_URI'];
 			if(file_exists($CHECKFILE))
 			{
+                // Handle a file if it actually exists
 				$out = file_get_contents($CHECKFILE);
 			} else {
 				$METHOD = $this->_SETTINGS['apps'][0]['method'];
@@ -129,6 +151,7 @@ class Paw
 			}
             unset($CHECKFILE);
 			
+            $HEAD = str_replace('__STATUS__', $status, $HEAD);
 			$HEAD = str_replace('__CONTENT_LENGTH__',strlen($out),$HEAD);
 			$put = $HEAD . $out;
 			
@@ -140,5 +163,29 @@ class Paw
             unset($out);
 		}
 	}
+
+    public function handleSig($signo) {
+        switch ($signo) {
+         case SIGTERM:
+         case SIGHUP:
+             // handle restart tasks
+             socket_close($this->SOCKET);
+             break;
+         case SIGUSR1:
+             echo "Caught SIGUSR1...\n";
+             break;
+         default:
+             // handle all other signals
+             break;
+     }
+    }
+
+    public function buildHandlers() {
+
+    }
+
+    public function refreshHandlers() {
+
+    }
 }
 ?>
