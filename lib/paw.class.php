@@ -40,11 +40,11 @@ class Paw
 		$this->_SETTINGS = json_decode($CONF,true);
 
         // IP Address to listen on
-        if(isset($this->_SETTINGS['address']))
+        if(!empty($this->_SETTINGS['address']))
 		  $SOCKETIP = $this->_SETTINGS['address'];
 
         // Port to accept connections on
-        if(isset($this->_SETTINGS['port']))
+        if(!empty($this->_SETTINGS['port']))
 		  $PORT = $this->_SETTINGS['port'];
 
 		writeToLog("Going to bind to {$ADDR}:{$PORT}");
@@ -79,7 +79,7 @@ class Paw
 
 		$out = 'output: ';
 
-        $cacheExpire = isset($this->_SETTINGS['apps'][0]['cacheExpire']) ? $this->_SETTINGS['apps'][0]['cacheExpire'] : 0;
+        $cacheExpire = !empty($this->_SETTINGS['apps'][0]['cacheExpire']) ? $this->_SETTINGS['apps'][0]['cacheExpire'] : 0;
 
 		$HEAD = "HTTP/1.1 __STATUS__ OK\r\n";
 		$HEAD .= "Server: PAW (Php Application Web Server)\r\n";
