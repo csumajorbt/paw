@@ -5,7 +5,7 @@ if(!is_dir($LOGDIR))
 	mkdir($LOGDIR, 055);
 $LOG = $LOGDIR . 'paw.log';
 
-require_once("/usr/lib/paw/lib/paw.class.php");
+require_once(__DIR__ . "/paw.class.php");
 $PAW = new Paw();
 
 $cpid = pcntl_fork();
