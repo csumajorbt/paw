@@ -2,6 +2,16 @@
 if [ ! -d /etc/paw ] ; then
 	mkdir /etc/paw
 fi
+
+if [ ! -d /usr/lib/paw ] ; then
+    mkdir /usr/lib/paw
+fi
+if [ ! -d /usr/lib/paw/lib ] ; then
+    mkdir /usr/lib/paw/lib
+fi
+
+cp -f -r * /usr/lib/paw/
+
 ln -s /usr/lib/paw/lib/paw.conf /etc/paw/paw.conf
 ln -s /usr/lib/paw/lib/paw /etc/init.d/paw
 ln -s /usr/lib/paw/lib/server /usr/sbin/paw
