@@ -12,8 +12,7 @@
 #             standalone paw.
 #
 # chkconfig: - 60 50
-# description: Vsftpd is a ftp daemon, which is the program \
-#              that answers incoming ftp service requests.
+# description: PAW - PHP Application Web server
 # processname: paw
 # config: /etc/paw/paw.conf
 
